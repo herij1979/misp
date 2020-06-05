@@ -98,10 +98,11 @@ RUN apt-get update -yqq && apt-get upgrade -yqq && apt-get install -yqq --no-ins
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
+ENV LC_ALL C.UTF-8
 
 # Edit the php.ini file to adjust initial PHP settings to MISP recommended settings
 RUN sed -i "s/max_execution_time = 30/max_execution_time = 300/" /etc/php/7.2/apache2/php.ini ; \
-    sed -i "s/memory_limit = 128M/memory_limit = 16G/" /etc/php/7.2/apache2/php.ini ; \
+    sed -i "s/memory_limit = 128M/memory_limit = 16384M/" /etc/php/7.2/apache2/php.ini ; \
     sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 250M/" /etc/php/7.2/apache2/php.ini ; \
     sed -i "s/post_max_size = 8M/post_max_size = 200M/" /etc/php/7.2/apache2/php.ini
 
@@ -140,6 +141,7 @@ RUN sudo pip3 install --upgrade pip ; \
     sudo pip3 install https://github.com/lief-project/packages/raw/lief-master-latest/pylief-0.9.0.dev.zip ; \
     sudo pip3 install jsonschema ; \
     sudo pip3 install reportlab ; \
+    sudo pip3 install plyara ; \
     sudo pip3 install python-magic ; \
     sudo pip3 install pyzmq ; \
     sudo pip3 install redis
@@ -150,7 +152,6 @@ RUN sudo -u www-data -H git submodule init ; \
     sudo -u www-data -H git submodule update
 
 
-ENV LC_ALL C.UTF-8
 WORKDIR /usr/local/src
 RUN sudo -H git clone https://github.com/MISP/misp-modules.git && \
     cd misp-modules && \
@@ -222,11 +223,6 @@ RUN sed -i -e 's/db login/misp/g' /var/www/MISP/app/Config/database.php ; \
     sed -i -e "s/bind 127.0.0.1 ::1/bind 0.0.0.0/" /etc/redis/redis.conf ; \
     sudo chown -R www-data:www-data /var/www/MISP/app/Config ; \
     sudo chmod -R 750 /var/www/MISP/app/Config ; \
-    sudo -u www-data -H wget https://github.com/ssdeep-project/ssdeep/releases/download/release-2.14.1/ssdeep-2.14.1.tar.gz ; \
-    tar zxvf ssdeep-2.14.1.tar.gz && cd ssdeep-2.14.1 && ./configure && make && sudo make install ; \
-    sudo pecl install ssdeep ; \
-    sudo echo "extension=ssdeep.so" > /etc/php/7.2/mods-available/ssdeep.ini ; \
-    sudo phpenmod ssdeep ; \
     echo "#!/bin/bash" > /init-db ; \
     echo "if [ ! -f /var/lib/mysql/.db_initialized ]; then" >> /init-db ; \
     echo "sudo chown -R mysql:mysql /var/lib/mysql" >> /init-db ; \
@@ -271,6 +267,25 @@ RUN sed -i -e 's/db login/misp/g' /var/www/MISP/app/Config/database.php ; \
     sudo -u www-data sh -c "gpg --homedir /var/www/MISP/.gnupg --export --armor $MISP_EMAIL > /var/www/MISP/app/webroot/gpg.asc" ; \
     sudo /etc/init.d/rng-tools stop ; \
     sudo apt-get remove --purge -y rng-tools
+
+
+WORKDIR /usr/local/src
+RUN sudo rm -rf ssdeep-2.14.1.tar.gz ssdeep-2.14.1 ; \
+    sudo wget https://github.com/ssdeep-project/ssdeep/releases/download/release-2.14.1/ssdeep-2.14.1.tar.gz ; \
+    sudo tar zxvf ssdeep-2.14.1.tar.gz ; \
+    cd ssdeep-2.14.1 ; \
+    sudo ./configure --datadir=/usr --prefix=/usr --localstatedir=/var --sysconfdir=/etc && \
+    sudo make && \
+    sudo make install ; \
+    # Download & install pear
+    sudo wget -O /tmp/go-pear.phar http://pear.php.net/go-pear.phar ; \
+    sudo printf "spawn php /tmp/go-pear.phar\nexpect \"Enter to continue:\"\nsend \"\\\r\"\nexpect \"alter php.ini\"\nsend \"n\\\r\"\nexpect \"Enter to continue:\"\nsend \"\\\r\"\nexpect eof\nexit 0\n" | expect ; \
+    sudo rm /tmp/go-pear.phar ; \
+    # Install ssdeep_php
+    sudo pecl channel-update pecl.php.net ; \
+    sudo pecl install ssdeep ; \
+    sudo echo "extension=ssdeep.so" > /etc/php/7.2/mods-available/ssdeep.ini ; \
+    sudo phpenmod ssdeep
 
 
 WORKDIR /etc/logrotate.d
