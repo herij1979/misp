@@ -103,8 +103,11 @@ ENV LC_ALL C.UTF-8
 # Edit the php.ini file to adjust initial PHP settings to MISP recommended settings
 RUN sed -i "s/max_execution_time = 30/max_execution_time = 300/" /etc/php/7.2/apache2/php.ini ; \
     sed -i "s/memory_limit = 128M/memory_limit = 16384M/" /etc/php/7.2/apache2/php.ini ; \
-    sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 250M/" /etc/php/7.2/apache2/php.ini ; \
-    sed -i "s/post_max_size = 8M/post_max_size = 200M/" /etc/php/7.2/apache2/php.ini
+    sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 500M/" /etc/php/7.2/apache2/php.ini ; \
+    sed -i "s/post_max_size = 8M/post_max_size = 500M/" /etc/php/7.2/apache2/php.ini ; \
+    sed -i "s/max_execution_time = 30/max_execution_time = 300/" /etc/php/7.2/cli/php.ini ; \
+    sed -i "s/upload_max_filesize = 2M/upload_max_filesize = 500M/" /etc/php/7.2/cli/php.ini ; \
+    sed -i "s/post_max_size = 8M/post_max_size = 500M/" /etc/php/7.2/cli/php.ini
 
 
 ARG POSTFIX_RELAY_HOST=localhost
