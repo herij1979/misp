@@ -27,7 +27,8 @@ ENV DEBIAN_FRONTEND noninteractive
 ENV DEBIAN_PRIORITY critical
 
 
-RUN apt-get update -yqq && apt-get upgrade -yqq && apt-get install -yqq --no-install-recommends \
+RUN set -eu ; \
+    apt-get update -yqq && apt-get upgrade -yqq && apt-get install -yqq --no-install-recommends \
     apache2  \
     apache2-doc  \
     apache2-utils  \
@@ -95,6 +96,7 @@ RUN apt-get update -yqq && apt-get upgrade -yqq && apt-get install -yqq --no-ins
     zip \
     zlib1g-dev  \
     supervisor && \
+    apt-get -y autoremove && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
