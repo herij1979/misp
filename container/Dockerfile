@@ -155,10 +155,15 @@ RUN sudo -u www-data -H git submodule init ; \
     sudo -u www-data -H git submodule update
 
 
+#====================================
+# Fix: pandas==1.2.1 to pandas==1.1.5
+#====================================
 WORKDIR /usr/local/src
 RUN sudo -H git clone https://github.com/MISP/misp-modules.git && \
     cd misp-modules && \
     sudo -H git checkout && \
+    sed -i "s/pandas==1.2.1/pandas==1.1.5/" REQUIREMENTS && \
+    sudo pip3 install --upgrade pandas==1.1.5 && \
     sudo pip3 install -I -r REQUIREMENTS && \
     sudo pip3 install -I .
 
